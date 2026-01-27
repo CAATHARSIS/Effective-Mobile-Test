@@ -2,16 +2,15 @@ package main
 
 import (
 	"Effective-Mobile-Test/internal/config"
-	"Effective-Mobile-Test/internal/models"
+	"Effective-Mobile-Test/internal/handlers"
 	"Effective-Mobile-Test/internal/repository"
 	"Effective-Mobile-Test/pkg/database"
-	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
@@ -35,65 +34,16 @@ func main() {
 	fmt.Println(s)
 
 	repo := repository.NewSubscriptionRepo(db)
-	now := time.Now()
+	handler := handlers.NewSubscriptionHandler(repo, log)
 
-	pas := uuid.New().String()
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
+	router := mux.NewRouter()
+	handler.RegisterRoutes(router)
+
+	server := &http.Server{
+		Addr: ":" + cfg.ServerPort,
+		Handler: router,
 	}
-	test := &models.Subscription{
-		ServiceName: "fdf",
-		Price:       32,
-		UserID:      pas,
-		StartDate:   now,
-	}
-
-	err = repo.Create(context.Background(), test)
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-	}
-
-	res, err := repo.GetByID(context.Background(), test.ID)
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-	}
-	log.Info(fmt.Sprintf("%v", *res))
-
-	updatedRes, err := repo.Update(context.Background(), &models.Subscription{
-		ID: test.ID,
-		ServiceName: "fdf",
-		Price:       42,
-		UserID:      test.UserID,
-		StartDate:   now,
-	})
-
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-	}
-	log.Info(fmt.Sprintf("%v", *updatedRes))
-
-	test2 := &models.Subscription{
-		ServiceName: "jhgjg",
-		Price:       555,
-		UserID:      uuid.New().String(),
-		StartDate:   now,
-	}
-	repo.Create(context.Background(), test2)
-
-	recordsList, err := repo.List(context.Background())
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-	}
-
-	fmt.Println("----------------------------")
-	for _, v := range recordsList {
-		fmt.Printf("%v\n", *v)
-	}
-
-	err = repo.DeleteByID(context.Background(), test.ID)
-	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
-	}
-
-	repo.DeleteByID(context.Background(), test2.ID)
+	
+	server.ListenAndServe()
+	defer server.Close()
 }

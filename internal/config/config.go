@@ -13,6 +13,7 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+	ServerPort string
 }
 
 func Load(log *slog.Logger) *Config {
@@ -27,6 +28,7 @@ func Load(log *slog.Logger) *Config {
 		DBUser:     getEnv("DB_USER", "postgres"),
 		DBPassword: getEnv("DB_PASSWORD", "postgres"),
 		DBName:     getEnv("DB_NAME", "Effective-Mobile-Test"),
+		ServerPort: getEnv("SERVER_PORT", "8080"),
 	}
 }
 

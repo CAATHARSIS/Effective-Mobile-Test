@@ -16,15 +16,15 @@ type RepositoryInterface interface {
 	List(ctx context.Context) ([]*models.Subscription, error)
 }
 
-type subscriptionRepo struct {
+type SubscriptionRepo struct {
 	db *sql.DB
 }
 
 func NewSubscriptionRepo(db *sql.DB) RepositoryInterface {
-	return &subscriptionRepo{db: db}
+	return &SubscriptionRepo{db: db}
 }
 
-func (r *subscriptionRepo) Create(ctx context.Context, subscription *models.Subscription) error {
+func (r *SubscriptionRepo) Create(ctx context.Context, subscription *models.Subscription) error {
 	query := `
 		INSERT INTO
 			subscription_record (
@@ -56,7 +56,7 @@ func (r *subscriptionRepo) Create(ctx context.Context, subscription *models.Subs
 	return nil
 }
 
-func (r *subscriptionRepo) GetByID(ctx context.Context, id int) (*models.Subscription, error) {
+func (r *SubscriptionRepo) GetByID(ctx context.Context, id int) (*models.Subscription, error) {
 	query := `
 		SELECT
 			id,
@@ -87,7 +87,7 @@ func (r *subscriptionRepo) GetByID(ctx context.Context, id int) (*models.Subscri
 	return &subscription, nil
 }
 
-func (r *subscriptionRepo) Update(ctx context.Context, subscription *models.Subscription) (*models.Subscription, error) {
+func (r *SubscriptionRepo) Update(ctx context.Context, subscription *models.Subscription) (*models.Subscription, error) {
 	query := `
 		UPDATE subscription_record
 		SET
@@ -133,7 +133,7 @@ func (r *subscriptionRepo) Update(ctx context.Context, subscription *models.Subs
 	return subscription, nil
 }
 
-func (r *subscriptionRepo) DeleteByID(ctx context.Context, id int) error {
+func (r *SubscriptionRepo) DeleteByID(ctx context.Context, id int) error {
 	query := `
 		DELETE FROM subscription_record
 		WHERE id = $1
@@ -147,7 +147,7 @@ func (r *subscriptionRepo) DeleteByID(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *subscriptionRepo) List(ctx context.Context) ([]*models.Subscription, error) {
+func (r *SubscriptionRepo) List(ctx context.Context) ([]*models.Subscription, error) {
 	query := `
 		SELECT
 			id,
