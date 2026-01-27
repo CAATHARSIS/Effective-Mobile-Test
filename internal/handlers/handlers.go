@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -27,10 +28,11 @@ func NewSubscriptionHandler(repo repository.RepositoryInterface, log *slog.Logge
 
 func (h *SubscriptionHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/subscriptions", h.CreateSubscriptionRecord).Methods("POST")
+	router.HandleFunc("/subscriptions/{id}", h.GetSubscriptionRecord).Methods("GET")
 }
 
 func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 5 * time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -71,7 +73,9 @@ func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	data, err := json.Marshal(subscription)
+	subscriptionResponse := subscription.ToResponse()
+
+	data, err := json.Marshal(subscriptionResponse)
 	if err != nil {
 		h.log.Error("Failed to marshal subscription record", "error", err)
 		return
@@ -79,6 +83,36 @@ func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r 
 	w.Write(data)
 }
 
+func (h *SubscriptionHandler) GetSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		h.handleError(w, "Invalid argument in request", err, http.StatusBadRequest)
+		return
+	}
+
+	subscription, err := h.repo.GetByID(ctx, id)
+	if err != nil {
+		h.handleError(w, err.Error(), err, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	subscriptionResponse := subscription.ToResponse()
+	data, err := json.Marshal(subscriptionResponse)
+	if err != nil {
+		h.handleError(w, "Failed to marshal response", err, http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+	h.log.Info("Subscription record got successfully", "ID", subscriptionResponse.ID)
+}
 
 func (h *SubscriptionHandler) handleError(w http.ResponseWriter, message string, err error, status int) {
 	http.Error(w, message, status)

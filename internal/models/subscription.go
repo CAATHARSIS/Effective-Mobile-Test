@@ -25,6 +25,32 @@ type CreateSubscriptionRequest struct {
 	EndDate     *string `json:"end_date"`
 }
 
+type SubscriptionResponse struct {
+	ID          int     `json:"id"`
+	ServiceName string  `json:"service_name"`
+	Price       int     `json:"price"`
+	UserID      string  `json:"user_id"`
+	StartDate   string  `json:"start_date"`
+	EndDate     *string `json:"end_date"`
+}
+
+func (sub Subscription) ToResponse() *SubscriptionResponse {
+	resp := SubscriptionResponse{
+		ID: sub.ID,
+		ServiceName: sub.ServiceName,
+		Price: sub.Price,
+		UserID: sub.UserID,
+		StartDate: formatDate(sub.StartDate),
+	}
+
+	if sub.EndDate != nil {
+		temp := formatDate(*sub.EndDate)
+		resp.EndDate = &temp
+	}
+
+	return &resp
+}
+
 func (req CreateSubscriptionRequest) ToSubscription() (*Subscription, error) {
 	stardDate, err := parseDate(req.StartDate)
 	if err != nil {
@@ -51,8 +77,6 @@ func (req CreateSubscriptionRequest) ToSubscription() (*Subscription, error) {
 	} else {
 		subscription.EndDate = &endDate
 	}
-
-	fmt.Println(subscription)
 
 	return &subscription, nil
 }
