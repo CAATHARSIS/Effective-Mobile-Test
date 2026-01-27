@@ -29,6 +29,7 @@ func NewSubscriptionHandler(repo repository.RepositoryInterface, log *slog.Logge
 func (h *SubscriptionHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/subscriptions", h.CreateSubscriptionRecord).Methods("POST")
 	router.HandleFunc("/subscriptions/{id}", h.GetSubscriptionRecord).Methods("GET")
+	router.HandleFunc("/subscriptions", h.ListSubsriptionRecords).Methods("GET")
 }
 
 func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +113,27 @@ func (h *SubscriptionHandler) GetSubscriptionRecord(w http.ResponseWriter, r *ht
 	}
 	w.Write(data)
 	h.log.Info("Subscription record got successfully", "ID", subscriptionResponse.ID)
+}
+
+func (h *SubscriptionHandler) ListSubsriptionRecords(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5 * time.Second)
+	defer cancel()
+
+	subscriptions, err := h.repo.List(ctx)
+	if err != nil {
+		h.handleError(w, err.Error(), err, http.StatusInternalServerError)
+		return
+	}
+
+	var response []*models.SubscriptionResponse
+	for _, sub := range subscriptions {
+		curr := sub.ToResponse()
+		response = append(response, curr)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+	h.log.Info("Subscription records listed successfully", "amount", len(response))
 }
 
 func (h *SubscriptionHandler) handleError(w http.ResponseWriter, message string, err error, status int) {
