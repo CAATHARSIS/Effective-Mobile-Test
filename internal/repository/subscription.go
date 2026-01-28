@@ -139,9 +139,18 @@ func (r *SubscriptionRepo) DeleteByID(ctx context.Context, id int) error {
 		WHERE id = $1
 	`
 
-	_, err := r.db.ExecContext(ctx, query, id)
+	res, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return fmt.Errorf("No subscription record with id: %v", err)
 	}
 
 	return nil

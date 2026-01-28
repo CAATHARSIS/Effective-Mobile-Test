@@ -33,6 +33,7 @@ func (h *SubscriptionHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/subscriptions", h.ListSubsriptionRecords).Methods("GET")
 	router.HandleFunc("/subscriptions/{id}", h.UpdateSubscriptionRecord).Methods("PUT")
 	router.HandleFunc("/subscriptions/{id}", h.PatchSubscriptionRecord).Methods("PATCH")
+	router.HandleFunc("/subscriptions/{id}", h.DeleteSubscriptionRecord).Methods("DELETE")
 }
 
 func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
@@ -281,6 +282,29 @@ func (h *SubscriptionHandler) PatchSubscriptionRecord(w http.ResponseWriter, r *
 	w.Write(data)
 
 	h.log.Info("Subscription record patched successfully", "id", id)
+}
+
+func (h *SubscriptionHandler) DeleteSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5 * time.Second)
+	defer cancel()
+
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		h.handleError(w, "Invalid request to delete subscritption record", err, http.StatusBadRequest)
+		return
+	}
+
+	err = h.repo.DeleteByID(ctx, id)
+	if err != nil {
+		h.handleError(w, "Failed to delete subscription record", err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	h.log.Info("Subscription record deleted successfully", "id", id)
 }
 
 func (h *SubscriptionHandler) handleError(w http.ResponseWriter, message string, err error, status int) {
