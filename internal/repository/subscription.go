@@ -50,7 +50,7 @@ func (r *SubscriptionRepo) Create(ctx context.Context, subscription *models.Subs
 	).Scan(&subscription.ID)
 
 	if err != nil {
-		return fmt.Errorf("Failed to create subscription record: %v", err)
+		return err
 	}
 
 	return nil
@@ -81,7 +81,7 @@ func (r *SubscriptionRepo) GetByID(ctx context.Context, id int) (*models.Subscri
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get subscription record by id: %v", err)
+		return nil, err
 	}
 
 	return &subscription, nil
@@ -126,7 +126,7 @@ func (r *SubscriptionRepo) Update(ctx context.Context, subscription *models.Subs
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("Subscription record with id %d not found", subscription.ID)
 		} else {
-			return nil, fmt.Errorf("Failed to update subscription record: %v", err)
+			return nil, err
 		}
 	}
 
@@ -141,7 +141,7 @@ func (r *SubscriptionRepo) DeleteByID(ctx context.Context, id int) error {
 
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("Failed to delete subscription record: %v", err)
+		return err
 	}
 
 	return nil
@@ -162,7 +162,7 @@ func (r *SubscriptionRepo) List(ctx context.Context) ([]*models.Subscription, er
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to list subscription records: %v", err)
+		return nil, err
 	}
 	defer rows.Close()
 
