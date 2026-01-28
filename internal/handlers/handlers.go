@@ -32,6 +32,7 @@ func (h *SubscriptionHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/subscriptions/{id}", h.GetSubscriptionRecord).Methods("GET")
 	router.HandleFunc("/subscriptions", h.ListSubsriptionRecords).Methods("GET")
 	router.HandleFunc("/subscriptions/{id}", h.UpdateSubscriptionRecord).Methods("PUT")
+	router.HandleFunc("/subscriptions/{id}", h.PatchSubscriptionRecord).Methods("PATCH")
 }
 
 func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
@@ -195,6 +196,91 @@ func (h *SubscriptionHandler) UpdateSubscriptionRecord(w http.ResponseWriter, r 
 	w.Write(data)
 
 	h.log.Info("Subscription record updated successfully", "ID", id)
+}
+
+func (h *SubscriptionHandler) PatchSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5 * time.Second)
+	defer cancel()
+
+	defer r.Body.Close()
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		h.handleError(w, "Invalid request", err, http.StatusBadRequest)
+		return
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		h.handleError(w, "Invalid request", err, http.StatusBadRequest)
+		return
+	}
+
+	var newSubscriptionRequest models.SubscriptionRequest
+	err = json.Unmarshal(body, &newSubscriptionRequest)
+	if err != nil {
+		h.handleError(w, "Invalid request", err, http.StatusBadRequest)
+		return
+	}
+
+	newSubscription, err := newSubscriptionRequest.ToSubscription()
+	if err != nil {
+		h.handleError(w, "Invalid request", err, http.StatusBadRequest)
+		return
+	}
+
+	oldSubscription, err := h.repo.GetByID(ctx, id)
+	if err != nil {
+		h.handleError(w, "Failed to get subscription record by id", err, http.StatusInternalServerError)
+		return
+	}
+
+	if newSubscription.ServiceName == "" {
+		newSubscription.ServiceName = oldSubscription.ServiceName
+	}
+
+	if newSubscription.Price == 0 {
+		newSubscription.Price = oldSubscription.Price
+	}
+
+	if newSubscription.UserID == "" {
+		newSubscription.UserID = oldSubscription.UserID
+	}
+
+	if newSubscription.StartDate.IsZero() {
+		newSubscription.StartDate = oldSubscription.StartDate
+	}
+
+	if newSubscription.EndDate == nil {
+		newSubscription.EndDate = oldSubscription.EndDate
+	}
+
+	newSubscription.ID = id
+
+	updatedSubsription, err := h.repo.Update(ctx, newSubscription)
+	if err != nil {
+		fmt.Println(newSubscription)
+		h.handleError(w, "Failed to update subscription record", err, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	subscriptionResponse := updatedSubsription.ToResponse()
+	data, err := json.Marshal(subscriptionResponse)
+	if err != nil {
+		h.handleError(w, "Failed to marshal response", err, http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(data)
+
+	h.log.Info("Subscription record patched successfully", "id", id)
 }
 
 func (h *SubscriptionHandler) handleError(w http.ResponseWriter, message string, err error, status int) {

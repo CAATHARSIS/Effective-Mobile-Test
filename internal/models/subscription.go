@@ -36,11 +36,11 @@ type SubscriptionResponse struct {
 
 func (sub Subscription) ToResponse() *SubscriptionResponse {
 	resp := SubscriptionResponse{
-		ID: sub.ID,
+		ID:          sub.ID,
 		ServiceName: sub.ServiceName,
-		Price: sub.Price,
-		UserID: sub.UserID,
-		StartDate: formatDate(sub.StartDate),
+		Price:       sub.Price,
+		UserID:      sub.UserID,
+		StartDate:   formatDate(sub.StartDate),
 	}
 
 	if sub.EndDate != nil {
@@ -82,6 +82,10 @@ func (req SubscriptionRequest) ToSubscription() (*Subscription, error) {
 }
 
 func parseDate(date string) (time.Time, error) {
+	if date == "" {
+		return time.Time{}, nil
+	}
+
 	parts := strings.Split(date, "-")
 	if len(parts) != 2 {
 		return time.Time{}, errors.New("Invalid date format, should be like MM-YYYY")
