@@ -20,27 +20,72 @@ type Subscription struct {
 	EndDate     *time.Time `json:"end_date,omitempty"`
 }
 
+// @Description Request to create or update subscription record
 type SubscriptionRequest struct {
+	// @Description Service Name
+	// @Example Yandex Plus
 	ServiceName string  `json:"service_name"`
+
+	// @Description Subscription price (integer number of rubles)
+	// @Exmaple 399
 	Price       int     `json:"price"`
+
+	// @Description User's UUID
+	// @Example 60601fee-2bf1-4721-ae6f-7636e79a0cba
 	UserID      string  `json:"user_id"`
+
+	// @Description Month and year of subscription srart, format: MM-YYYY
+	// @Example 07-2025
 	StartDate   string  `json:"start_date"`
+
+	// @Description Month and year of subsription end, format: MM-YYYY
+	// @Example 08-2025
 	EndDate     *string `json:"end_date"`
 }
 
+// @Description Response with information about subscription
 type SubscriptionResponse struct {
+	// @Description Integer ID of subscription record
+	// @Example 1
 	ID          int     `json:"id"`
+
+	// @Description Service Name
+	// @Example Yandex Plus
 	ServiceName string  `json:"service_name"`
+
+	// @Description Subscription price (integer number of rubles)
+	// @Exmaple 399
 	Price       int     `json:"price"`
+
+	// @Description User's UUID
+	// @Example 60601fee-2bf1-4721-ae6f-7636e79a0cba
 	UserID      string  `json:"user_id"`
+
+	// @Description Month and year of subscription srart, format: MM-YYYY
+	// @Example 07-2025
 	StartDate   string  `json:"start_date"`
+
+	// @Description Month and year of subsription end, format: MM-YYYY
+	// @Example 08-2025
 	EndDate     *string `json:"end_date"`
 }
 
+// @Description Request with parameters to calculate cost of subscription records
 type SubscriptionCostRequest struct {
+	// @Description Service Name
+	// @Example Yandex Plus
 	ServiceName string `json:"service_name"`
+
+	// @Description User's UUID
+	// @Example 60601fee-2bf1-4721-ae6f-7636e79a0cba
 	UserID      string `json:"user_id"`
+
+	// @Description Month and year of subscription srart, format: MM-YYYY
+	// @Example 07-2025
 	StartDate   string `json:"start_date"`
+
+	// @Description Month and year of subsription end, format: MM-YYYY
+	// @Example 08-2025
 	EndDate     string `json:"end_date"`
 }
 
@@ -51,7 +96,10 @@ type SubscriptionCost struct {
 	EndDate     *time.Time     `json:"end_date"`
 }
 
+// @Description Response with total cost of subscription records
 type SubscriptionCostResponse struct {
+	// @Description Integer total cost of subscription records
+	// @Exmaple 2344
 	Cost int `json:"cost"`
 }
 

@@ -40,6 +40,13 @@ func (h *SubscriptionHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/subscriptions/{id:[0-9]+}", h.DeleteSubscriptionRecord).Methods("DELETE")
 }
 
+// @Summary Create new subscription record
+// @Description Creates new subscription record
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Success 201 {object} models.SubscriptionResponse
+// @Router /subscriptions [post]
 func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -92,6 +99,13 @@ func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r 
 	w.Write(data)
 }
 
+// @Summary Get subscription record by ID
+// @Description Gets subscription record by ID
+// @Tags subscriptions
+// @Produce json
+// @Param id path int true "Subscription ID"
+// @Success 200 {object} models.SubscriptionResponse
+// @Router /subscriptions/{id} [get]
 func (h *SubscriptionHandler) GetSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -123,6 +137,12 @@ func (h *SubscriptionHandler) GetSubscriptionRecord(w http.ResponseWriter, r *ht
 	h.log.Info("Subscription record got successfully", "ID", subscriptionResponse.ID)
 }
 
+// @Summary List subscription records
+// @Description Lists subscription records
+// @Tags subscriptions
+// @Produce json
+// @Success 200 {array} models.SubscriptionResponse
+// @Router /subscriptions [get]
 func (h *SubscriptionHandler) ListSubsriptionRecords(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -146,6 +166,15 @@ func (h *SubscriptionHandler) ListSubsriptionRecords(w http.ResponseWriter, r *h
 	h.log.Info("Subscription records listed successfully", "amount", len(response))
 }
 
+// @Summary Update subscription recored by ID
+// @Description Makes full update of subscription recored by ID
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param id path int true "Subscription ID"
+// @Param subscription body models.SubscriptionRequest true "New data for subscription record"
+// @Success 200 {object} models.SubscriptionResponse
+// @Router /subscriptions/{id} [put]
 func (h *SubscriptionHandler) UpdateSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -203,6 +232,15 @@ func (h *SubscriptionHandler) UpdateSubscriptionRecord(w http.ResponseWriter, r 
 	h.log.Info("Subscription record updated successfully", "ID", id)
 }
 
+// @Summary Patch subscription record by ID
+// @Description Makes partial update of subscription record by ID
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param id path int true "Subscription ID"
+// @Param subscription body models.SubscriptionRequest true "Data for partial updating subscription record"
+// @Success 200 {object} models.SubscriptionResponse
+// @Router /subscriptions/{id} [patch]
 func (h *SubscriptionHandler) PatchSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -288,6 +326,12 @@ func (h *SubscriptionHandler) PatchSubscriptionRecord(w http.ResponseWriter, r *
 	h.log.Info("Subscription record patched successfully", "id", id)
 }
 
+// @Summary Delete subscription record by ID
+// @Description Deletes subscription record by ID
+// @Tags subscriptions
+// @Param id path int true "Subscription ID"
+// @Success 204 "No content"
+// @Router /subscriptions/{id} [delete]
 func (h *SubscriptionHandler) DeleteSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -311,6 +355,16 @@ func (h *SubscriptionHandler) DeleteSubscriptionRecord(w http.ResponseWriter, r 
 	h.log.Info("Subscription record deleted successfully", "id", id)
 }
 
+// @Summary Calculate subscriptin cost
+// @Description Calculating subscription cost based on filtering parametres
+// @Tags subscriptions
+// @Produce json
+// @Param start_date query string false "Start date of period (MM-YYYY)"
+// @Param end_date query string false "End date of period (MM-YYYY)"
+// @Param service_name query string false "Service name for filtering"
+// @Param user_id query string fasle "User UUID for filtering"
+// @Success 200 {object} models.SubscriptionCostResponse
+// @Router /subscriptions/total-cost [get]
 func (h *SubscriptionHandler) CalculateSubscriptionCost(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()

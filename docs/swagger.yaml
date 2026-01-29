@@ -1,0 +1,229 @@
+basePath: /
+definitions:
+  models.SubscriptionCostResponse:
+    description: Response with total cost of subscription records
+    properties:
+      cost:
+        description: |-
+          @Description Integer total cost of subscription records
+          @Exmaple 2344
+        type: integer
+    type: object
+  models.SubscriptionRequest:
+    description: Request to create or update subscription record
+    properties:
+      end_date:
+        description: |-
+          @Description Month and year of subsription end, format: MM-YYYY
+          @Example 08-2025
+        type: string
+      price:
+        description: |-
+          @Description Subscription price (integer number of rubles)
+          @Exmaple 399
+        type: integer
+      service_name:
+        description: |-
+          @Description Service Name
+          @Example Yandex Plus
+        type: string
+      start_date:
+        description: |-
+          @Description Month and year of subscription srart, format: MM-YYYY
+          @Example 07-2025
+        type: string
+      user_id:
+        description: |-
+          @Description User's UUID
+          @Example 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    type: object
+  models.SubscriptionResponse:
+    description: Response with information about subscription
+    properties:
+      end_date:
+        description: |-
+          @Description Month and year of subsription end, format: MM-YYYY
+          @Example 08-2025
+        type: string
+      id:
+        description: |-
+          @Description Integer ID of subscription record
+          @Example 1
+        type: integer
+      price:
+        description: |-
+          @Description Subscription price (integer number of rubles)
+          @Exmaple 399
+        type: integer
+      service_name:
+        description: |-
+          @Description Service Name
+          @Example Yandex Plus
+        type: string
+      start_date:
+        description: |-
+          @Description Month and year of subscription srart, format: MM-YYYY
+          @Example 07-2025
+        type: string
+      user_id:
+        description: |-
+          @Description User's UUID
+          @Example 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API для агрегации данных об онлайн подписках пользователей
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Effective-Mobile-Test API
+  version: "1.0"
+paths:
+  /subscriptions:
+    get:
+      description: Lists subscription records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.SubscriptionResponse'
+            type: array
+      summary: List subscription records
+      tags:
+      - subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Creates new subscription record
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.SubscriptionResponse'
+      summary: Create new subscription record
+      tags:
+      - subscriptions
+  /subscriptions/{id}:
+    delete:
+      description: Deletes subscription record by ID
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No content
+      summary: Delete subscription record by ID
+      tags:
+      - subscriptions
+    get:
+      description: Gets subscription record by ID
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SubscriptionResponse'
+      summary: Get subscription record by ID
+      tags:
+      - subscriptions
+    patch:
+      consumes:
+      - application/json
+      description: Makes partial update of subscription record by ID
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data for partial updating subscription record
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/models.SubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SubscriptionResponse'
+      summary: Patch subscription record by ID
+      tags:
+      - subscriptions
+    put:
+      consumes:
+      - application/json
+      description: Makes full update of subscription recored by ID
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New data for subscription record
+        in: body
+        name: subscription
+        required: true
+        schema:
+          $ref: '#/definitions/models.SubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SubscriptionResponse'
+      summary: Update subscription recored by ID
+      tags:
+      - subscriptions
+  /subscriptions/total-cost:
+    get:
+      description: Calculating subscription cost based on filtering parametres
+      parameters:
+      - description: Start date of period (MM-YYYY)
+        in: query
+        name: start_date
+        type: string
+      - description: End date of period (MM-YYYY)
+        in: query
+        name: end_date
+        type: string
+      - description: Service name for filtering
+        in: query
+        name: service_name
+        type: string
+      - description: User UUID for filtering
+        in: query
+        name: user_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SubscriptionCostResponse'
+      summary: Calculate subscriptin cost
+      tags:
+      - subscriptions
+swagger: "2.0"
