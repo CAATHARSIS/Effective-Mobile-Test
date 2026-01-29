@@ -14,6 +14,7 @@ type RepositoryInterface interface {
 	Update(ctx context.Context, subscription *models.Subscription) (*models.Subscription, error)
 	DeleteByID(ctx context.Context, id int) error
 	List(ctx context.Context) ([]*models.Subscription, error)
+	CalculateSubscriptionCost(ctx context.Context, subscriptionCost *models.SubscriptionCost) (int, error)
 }
 
 type SubscriptionRepo struct {
@@ -199,4 +200,33 @@ func (r *SubscriptionRepo) List(ctx context.Context) ([]*models.Subscription, er
 	}
 
 	return records, nil
+}
+
+func (r *SubscriptionRepo) CalculateSubscriptionCost(ctx context.Context, subscriptionCost *models.SubscriptionCost) (int, error) {
+	query := `
+		SELECT
+			COALESCE(SUM(price), 0)
+		FROM
+			subscription_record
+		WHERE
+			($2::date IS NULL OR start_date <= $2)
+    		AND ($1::date IS NULL OR end_date IS NULL OR end_date >= $1)
+			AND (user_id = $3 OR $3 IS NULL)
+			AND (service_name = $4 OR $4 IS NULL)
+	`
+	
+	var totalCost int
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		subscriptionCost.StartDate,
+		subscriptionCost.EndDate,
+		subscriptionCost.UserID,
+		subscriptionCost.ServiceName,
+	).Scan(&totalCost)
+	if err != nil {
+		return 0, fmt.Errorf("Error while scanning result: %v", err)
+	}
+
+	return totalCost, nil
 }

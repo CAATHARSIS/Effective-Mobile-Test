@@ -5,6 +5,7 @@ import (
 	"Effective-Mobile-Test/internal/repository"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -29,11 +31,13 @@ func NewSubscriptionHandler(repo repository.RepositoryInterface, log *slog.Logge
 
 func (h *SubscriptionHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/subscriptions", h.CreateSubscriptionRecord).Methods("POST")
-	router.HandleFunc("/subscriptions/{id}", h.GetSubscriptionRecord).Methods("GET")
 	router.HandleFunc("/subscriptions", h.ListSubsriptionRecords).Methods("GET")
-	router.HandleFunc("/subscriptions/{id}", h.UpdateSubscriptionRecord).Methods("PUT")
-	router.HandleFunc("/subscriptions/{id}", h.PatchSubscriptionRecord).Methods("PATCH")
-	router.HandleFunc("/subscriptions/{id}", h.DeleteSubscriptionRecord).Methods("DELETE")
+	router.HandleFunc("/subscriptions/total-cost", h.CalculateSubscriptionCost).Methods("GET")
+
+	router.HandleFunc("/subscriptions/{id:[0-9]+}", h.GetSubscriptionRecord).Methods("GET")
+	router.HandleFunc("/subscriptions/{id:[0-9]+}", h.UpdateSubscriptionRecord).Methods("PUT")
+	router.HandleFunc("/subscriptions/{id:[0-9]+}", h.PatchSubscriptionRecord).Methods("PATCH")
+	router.HandleFunc("/subscriptions/{id:[0-9]+}", h.DeleteSubscriptionRecord).Methods("DELETE")
 }
 
 func (h *SubscriptionHandler) CreateSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +204,7 @@ func (h *SubscriptionHandler) UpdateSubscriptionRecord(w http.ResponseWriter, r 
 }
 
 func (h *SubscriptionHandler) PatchSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 5 * time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	defer r.Body.Close()
@@ -250,7 +254,7 @@ func (h *SubscriptionHandler) PatchSubscriptionRecord(w http.ResponseWriter, r *
 		newSubscription.Price = oldSubscription.Price
 	}
 
-	if newSubscription.UserID == "" {
+	if newSubscription.UserID == uuid.Nil {
 		newSubscription.UserID = oldSubscription.UserID
 	}
 
@@ -285,7 +289,7 @@ func (h *SubscriptionHandler) PatchSubscriptionRecord(w http.ResponseWriter, r *
 }
 
 func (h *SubscriptionHandler) DeleteSubscriptionRecord(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 5 * time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	defer r.Body.Close()
@@ -305,6 +309,53 @@ func (h *SubscriptionHandler) DeleteSubscriptionRecord(w http.ResponseWriter, r 
 
 	w.WriteHeader(http.StatusNoContent)
 	h.log.Info("Subscription record deleted successfully", "id", id)
+}
+
+func (h *SubscriptionHandler) CalculateSubscriptionCost(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	defer r.Body.Close()
+
+	start_date := r.URL.Query().Get("start_date")
+	end_date := r.URL.Query().Get("end_date")
+	user_id := r.URL.Query().Get("user_id")
+	service_name := r.URL.Query().Get("service_name")
+
+	subscriptionCostRequest := models.SubscriptionCostRequest{
+		StartDate:   start_date,
+		EndDate:     end_date,
+		UserID:      user_id,
+		ServiceName: service_name,
+	}
+
+	subscriptionCost, err := subscriptionCostRequest.ToSubscriptionCost()
+	if err != nil {
+		h.handleError(w, "Invalid request", err, http.StatusBadRequest)
+		return
+	}
+
+	if subscriptionCost.EndDate != nil && subscriptionCost.StartDate != nil && (*subscriptionCost).EndDate.Before(*subscriptionCost.StartDate) {
+		h.handleError(w, "end date must be bigger than start date", errors.New("Invalid dates"), http.StatusBadRequest)
+		return
+	}
+
+	cost, err := h.repo.CalculateSubscriptionCost(ctx, subscriptionCost)
+	if err != nil {
+		h.handleError(w, "Failed to calculate subscription cost", err, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	subscriptionCostResponse := models.SubscriptionCostResponse{Cost: cost}
+	data, err := json.Marshal(subscriptionCostResponse)
+	if err != nil {
+		h.handleError(w, "Failed to calculate subscription cost", err, http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+
+	h.log.Info("Subscription cost calculated successfully", "cost", cost)
 }
 
 func (h *SubscriptionHandler) handleError(w http.ResponseWriter, message string, err error, status int) {
