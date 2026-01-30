@@ -35,19 +35,24 @@ func main() {
 
 	fmt.Println(cfg)
 
-	db, err := database.NewPostgresDB(cfg)
+	migrationDB, err := database.NewPostgresDB(cfg)
 	if err != nil {
-		log.Error(fmt.Sprintf("%v", err))
+		log.Error("Failed to connect to database", "error", err)
 	}
 
-	var s string
-	err = db.QueryRow("Select current_database()").Scan(&s)
-	if err != nil {
-		fmt.Println(err)
+	if err := database.RunMigrations(migrationDB, log); err != nil {
+		log.Error("Failed to run migrations", "error", err)
+		if err := migrationDB.Close(); err != nil {
+			log.Error("Failed to close migration connection", "error", err)
+		}
 	}
-	fmt.Println(s)
 
-	repo := repository.NewSubscriptionRepo(db)
+	appDB, err := database.NewPostgresDB(cfg)
+	if err != nil {
+		log.Error("Failed to connect to database", "error", err)
+	}
+
+	repo := repository.NewSubscriptionRepo(appDB)
 	handler := handlers.NewSubscriptionHandler(repo, log)
 
 	router := mux.NewRouter()
@@ -63,5 +68,7 @@ func main() {
 	}
 
 	server.ListenAndServe()
+	log.Info("Server started", "port", cfg.ServerPort)
+
 	defer server.Close()
 }
